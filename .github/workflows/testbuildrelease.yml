@@ -10,7 +10,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        example: [examples/CustomConnection.ino, examples/GettingStarted.ino]
         os: [ubuntu-latest, macos-latest, windows-latest]
         
     steps:
@@ -31,9 +30,13 @@ jobs:
       - name: Run tests on the native platform
         run: platformio test -e test_native
       - name: Build Examples
-        run: pio ci --project-conf=platformio.ini --environment=production
+        shell: bash
+        run: |
+          for i in $examples; do
+            pio ci --project-conf=platformio.ini --environment=production ${i}
+          done
         env:
-          PLATFORMIO_CI_SRC: ${{ matrix.example }}
+          examples: (examples/CustomConnection/CustomConnection.ino examples/GettingStarted/GettingStarted.ino)
       
   versioning:
     needs: test
@@ -161,7 +164,7 @@ jobs:
           echo "  Major         : ${{ steps.selectversion.outputs.nextmajordigit }}"
           echo "  Minor         : ${{ steps.selectversion.outputs.nextminordigit }}"
           echo "  Patch         : ${{ steps.selectversion.outputs.nextpatchdigit }}"
-          echo "Build Filename  : ${{ steps.selectversion.outputs.buildversionfilename }}.hex"
+          echo "Build Filename  : ${{ steps.selectversion.outputs.buildversionfilename }}"
           echo "Build Timestamp : ${{ steps.versioninfo.outputs.buildtimestamp }}"
 
       - name: Release when on main branch
