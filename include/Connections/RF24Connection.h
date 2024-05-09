@@ -9,9 +9,9 @@ public:
 	bool begin();
 	void end();
 	bool available();
-	void read(void *buffer, unsigned int length);
+	void read(void *buffer, size_t length);
 	int getPayloadSize();
-	bool write(const void *buffer, unsigned int length);
+	bool write(const void *buffer, size_t length);
 	int getMaxPackageSize();
 };
 

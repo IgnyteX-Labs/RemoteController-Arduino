@@ -1,5 +1,6 @@
 #ifndef REMOTECONTROLLERCONNECTION_H_
 #define REMOTECONTROLLERCONNECTION_H_
+#include <stddef.h>
 
 /**
  * @brief This abstract class interfaces between the RemoteController and any way of transmitting the data for the RemoteController. E.g. WiFi and RF24.
@@ -35,7 +36,7 @@ public:
 	 * @param buffer to store the incoming data to
 	 * @param length length/size of the buffer
 	 */
-	virtual void read(void *buffer, unsigned int length) = 0;
+	virtual void read(void *buffer, size_t length) = 0;
 
 	/**
 	 * @brief Get the size of the payload that will be read with Connection::read()
@@ -52,7 +53,7 @@ public:
 	 * @return true succesfully transmission
 	 * @return false failed to transmit
 	 */
-	virtual bool write(const void *buffer, unsigned int length) = 0;
+	virtual bool write(const void *buffer, size_t length) = 0;
 
 	/**
 	 * @brief The maximum size, in byte, that can be send in one package i.e. with one Connection::write() call. HAS TO BE AN EVEN NUMBER!!

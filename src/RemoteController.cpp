@@ -22,7 +22,7 @@ bool RemoteController::begin(std::function<void(const std::vector<uint8_t> &comm
 	return m_begin();
 }
 
-bool RemoteController::begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, std::size_t length)> pldClb)
+bool RemoteController::begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, size_t length)> pldClb)
 {
 	// Assign callbacks
 	commandCallbackFunction = cmdClb;

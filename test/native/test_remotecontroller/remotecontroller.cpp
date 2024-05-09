@@ -1,5 +1,7 @@
 #include <ArduinoFake.h>
 #include <unity.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "RemoteController.h"
 
@@ -30,7 +32,7 @@ void test_sendCommand_HighPriority()
 	When(Method(mockConnection, begin)).Return(true);
 	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
-		.Do([](const void *buffer, unsigned int length) -> bool
+		.Do([](const void *buffer, size_t length) -> bool
 			{ 
 			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
@@ -50,7 +52,7 @@ void test_sendCommand_NormalPriority() {
 	When(Method(mockConnection, begin)).Return(true);
 	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
-		.Do([](const void *buffer, unsigned int length) -> bool
+		.Do([](const void *buffer, size_t length) -> bool
 			{ 
 			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
@@ -73,7 +75,7 @@ void test_sendCommandWithThrottle_HighPriority()
 	When(Method(mockConnection, begin)).Return(true);
 	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
-		.Do([](const void *buffer, unsigned int length) -> bool
+		.Do([](const void *buffer, size_t length) -> bool
 			{ 
 			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
@@ -94,7 +96,7 @@ void test_sendCommandWithThrottle_NormalPriority()
 	When(Method(mockConnection, begin)).Return(true);
 	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
-		.Do([](const void *buffer, unsigned int length) -> bool
+		.Do([](const void *buffer, size_t length) -> bool
 			{ 
 			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
@@ -117,7 +119,7 @@ void test_sendCommandMultiple_NormalPriority()
 	When(Method(mockConnection, begin)).Return(true);
 	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
-		.Do([](const void *buffer, unsigned int length) -> bool
+		.Do([](const void *buffer, size_t length) -> bool
 			{ 
 			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
@@ -147,7 +149,7 @@ void test_sendCommandMultipleWithThrottle_NormalPriority()
 	When(Method(mockConnection, begin)).Return(true);
 	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
-		.Do([](const void *buffer, unsigned int length) -> bool
+		.Do([](const void *buffer, size_t length) -> bool
 			{ 
 			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command

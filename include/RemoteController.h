@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <stdint.h>
+#include <stddef.h>
 #include "Connections/Connection.h"
 
 /**
@@ -44,7 +45,7 @@ public:
 	 * @return true succesffully started the RemoteController and connected to the other controller
 	 * @return false failed to start or connect
 	 */
-	bool begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, std::size_t length)> pldClb);
+	bool begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, size_t length)> pldClb);
 	/**
 	 * @brief Closes the RemoteController connection and frees all occupied memory
 	 *

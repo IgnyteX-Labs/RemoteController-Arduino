@@ -14,7 +14,7 @@ void RF24Connection::end()
 bool RF24Connection::available()
 {
 }
-void RF24Connection::read(void *buffer, unsigned int length)
+void RF24Connection::read(void *buffer, size_t length)
 {
 }
 
@@ -22,7 +22,7 @@ int RF24Connection::getPayloadSize()
 {
 }
 
-bool RF24Connection::write(const void *buffer, unsigned int length)
+bool RF24Connection::write(const void *buffer, size_t length)
 {
 }
 
