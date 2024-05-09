@@ -30,13 +30,9 @@ jobs:
       - name: Run tests on the native platform
         run: platformio test -e test_native
       - name: Build Examples
-        shell: bash
         run: |
-          for i in $examples; do
-            pio ci --project-conf=platformio.ini --environment=production ${i}
-          done
-        env:
-          examples: (examples/CustomConnection/CustomConnection.ino examples/GettingStarted/GettingStarted.ino)
+          pio ci --project-conf=platformio.ini --environment=production examples/CustomConnection/CustomConnection.ino
+          pio ci --project-conf=platformio.ini --environment=production examples/GettingStarted/GettingStarted.ino
       
   versioning:
     needs: test
