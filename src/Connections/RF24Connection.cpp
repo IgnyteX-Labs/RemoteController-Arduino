@@ -25,3 +25,7 @@ int RF24Connection::getPayloadSize()
 bool RF24Connection::write(const void *buffer, unsigned int length)
 {
 }
+
+int RF24Connection::getMaxPackageSize() {
+	return 32;
+}

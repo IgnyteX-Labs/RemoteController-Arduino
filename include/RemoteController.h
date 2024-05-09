@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <functional>
+#include <stdint.h>
 #include "Connections/Connection.h"
 
 /**
@@ -33,7 +34,7 @@ public:
 	 * @return true succesffully started the RemoteController and connected to the other controller
 	 * @return false failed to start or connect
 	 */
-	bool begin(std::function<void(const std::vector<std::uint8_t> &commands, const std::vector<std::uint8_t> &throttle)> cmdClb);
+	bool begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb);
 
 	/**
 	 * @brief Starts the RemoteController and connects it to the other controller
@@ -43,7 +44,7 @@ public:
 	 * @return true succesffully started the RemoteController and connected to the other controller
 	 * @return false failed to start or connect
 	 */
-	bool begin(std::function<void(const std::vector<std::uint8_t> &commands, const std::vector<std::uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, std::size_t length)> pldClb);
+	bool begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, std::size_t length)> pldClb);
 	/**
 	 * @brief Closes the RemoteController connection and frees all occupied memory
 	 *
@@ -62,16 +63,16 @@ public:
 	 * @param command The command to be sent (should be implemented as enum on both RemoteControllers)
 	 * @param priority The RemoteControllerPriority with which the command should be sent
 	 */
-	void sendCommand(std::uint8_t command, RemoteControllerPriority priority = RemoteControllerPriority::Normal);
+	void sendCommand(uint8_t command, RemoteControllerPriority priority = RemoteControllerPriority::Normal);
 
 	/**
-	 * @brief Sends a command including a std::uint8_t throttle value.
+	 * @brief Sends a command including a uint8_t throttle value.
 	 *
 	 * @param command The command to be sent (should be implemented as enum on both RemoteControllers)
-	 * @param throttle a std::uint8_t (0-255) value to be sent alongside the command for throttle, etc. control
+	 * @param throttle a uint8_t (0-255) value to be sent alongside the command for throttle, etc. control
 	 * @param priority The RemoteControllerPriority with which the command should be sent
 	 */
-	void sendCommand(std::uint8_t command, std::uint8_t throttle, RemoteControllerPriority priority = RemoteControllerPriority::Normal);
+	void sendCommand(uint8_t command, uint8_t throttle, RemoteControllerPriority priority = RemoteControllerPriority::Normal);
 
 	/**
 	 * @brief Sends a binary payload to the other RemoteController
@@ -82,10 +83,10 @@ public:
 	void sendPayload(const void *buffer, size_t length);
 
 	/**
-	 * @brief An implementation of standard commands. WARNING if additonal commands want to be used implement an enum conforming to std::uint8_t holding ALL nedded Commands. IGNORE the StandardCommands enum. Only one enum of Commands can be used!!
+	 * @brief An implementation of standard commands. WARNING if additonal commands want to be used implement an enum conforming to uint8_t holding ALL nedded Commands. IGNORE the StandardCommands enum. Only one enum of Commands can be used!!
 	 *
 	 */
-	enum StandardCommands : std::uint8_t
+	enum StandardCommands : uint8_t
 	{
 		GoForward,
 		GoBackward,
@@ -93,7 +94,7 @@ public:
 		GoRight
 	};
 
-	enum Error : std::uint8_t
+	enum Error : uint8_t
 	{
 		NoError,
 		CannotBeginConnection,
@@ -107,8 +108,8 @@ private:
 	 * @brief Holds a list of 8bit integers in pairs of two: The first integer is always a Command and the second integer a corresponding throttle value.
 	 *
 	 */
-	std::vector<std::uint8_t> commandQueue;
-	std::function<void(const std::vector<std::uint8_t> &commands, const std::vector<std::uint8_t> &throttles)> commandCallbackFunction;
+	std::vector<uint8_t> commandQueue;
+	std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttles)> commandCallbackFunction;
 	std::function<void(const void *buffer, size_t length)> payloadCallbackFunction;
 
 #ifndef REMOTECONTROLLER_INCOMING_BUFFER_SIZE
@@ -118,15 +119,15 @@ private:
 #define REMOTECONTROLLER_OUTGOING_BUFFER_SIZE 32
 #endif
 
-	std::uint8_t *incomingBuffer;
-	std::uint8_t *outgoingBuffer;
-	std::vector<std::uint8_t> incomingCommandsBuffer;
-	std::vector<std::uint8_t> incomingThrottlesBuffer;
+	uint8_t *incomingBuffer;
+	uint8_t *outgoingBuffer;
+	std::vector<uint8_t> incomingCommandsBuffer;
+	std::vector<uint8_t> incomingThrottlesBuffer;
 // RemoteController Identifier byte
 #define REMOTECONTROLLER_IDENTIFIER_COMMAND 0xEEAF
 
 	bool m_begin();
-	bool transmitCommands(const std::vector<std::uint8_t> &commands);
+	bool transmitCommands(const std::vector<uint8_t> &commands);
 };
 
 #endif

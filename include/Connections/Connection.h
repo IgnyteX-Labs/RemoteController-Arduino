@@ -58,7 +58,7 @@ public:
 	 * @brief The maximum size, in byte, that can be send in one package i.e. with one Connection::write() call. HAS TO BE AN EVEN NUMBER!!
 	 * 
 	 */
-	const int maxPackageSize = 0;
+	virtual int getMaxPackageSize() = 0;
 };
 
 #endif

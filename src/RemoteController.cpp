@@ -15,14 +15,14 @@ RemoteController::~RemoteController()
 
 }
 
-bool RemoteController::begin(std::function<void(const std::vector<std::uint8_t> &commands, const std::vector<std::uint8_t> &throttle)> cmdClb)
+bool RemoteController::begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb)
 {
 	commandCallbackFunction = cmdClb;
 
 	return m_begin();
 }
 
-bool RemoteController::begin(std::function<void(const std::vector<std::uint8_t> &commands, const std::vector<std::uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, std::size_t length)> pldClb)
+bool RemoteController::begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, std::size_t length)> pldClb)
 {
 	// Assign callbacks
 	commandCallbackFunction = cmdClb;
@@ -41,8 +41,8 @@ bool RemoteController::m_begin()
 		return false;
 	}
 
-	incomingBuffer = new std::uint8_t[REMOTECONTROLLER_INCOMING_BUFFER_SIZE];
-	outgoingBuffer = new std::uint8_t[REMOTECONTROLLER_OUTGOING_BUFFER_SIZE];
+	incomingBuffer = new uint8_t[REMOTECONTROLLER_INCOMING_BUFFER_SIZE];
+	outgoingBuffer = new uint8_t[REMOTECONTROLLER_OUTGOING_BUFFER_SIZE];
 	incomingCommandsBuffer.reserve(10);
 	incomingThrottlesBuffer.reserve(10);
 	commandQueue.reserve(20);
@@ -74,12 +74,13 @@ void RemoteController::run()
 	{
 		connection.read(incomingBuffer, sizeof(REMOTECONTROLLER_INCOMING_BUFFER_SIZE));
 		size_t payloadSize = std::min(connection.getPayloadSize(), REMOTECONTROLLER_INCOMING_BUFFER_SIZE);
-		std::uint8_t *pStart = incomingBuffer;
-		std::uint8_t *pEnd = incomingBuffer + payloadSize;
+		uint8_t *pStart = incomingBuffer;
+		uint8_t *pEnd = incomingBuffer + payloadSize;
 
 		// Check the first two bytes of the buffer for RemoteController Command identifier
-		if ((*pStart * 256 + *(++pStart)) == REMOTECONTROLLER_IDENTIFIER_COMMAND)
+		if ((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND)
 		{
+			pStart++;
 			while (pStart != pEnd)
 			{
 				incomingCommandsBuffer.push_back(*(++pStart));
@@ -98,12 +99,12 @@ void RemoteController::run()
 	}
 }
 
-void RemoteController::sendCommand(std::uint8_t command, RemoteControllerPriority priority)
+void RemoteController::sendCommand(uint8_t command, RemoteControllerPriority priority)
 {
 	sendCommand(command, UINT8_MAX, priority);
 }
 
-void RemoteController::sendCommand(std::uint8_t command, std::uint8_t throttle, RemoteControllerPriority priority)
+void RemoteController::sendCommand(uint8_t command, uint8_t throttle, RemoteControllerPriority priority)
 {
 	if (priority == Normal)
 	{
@@ -127,7 +128,7 @@ void RemoteController::sendPayload(const void *buffer, size_t length) {
 
 }
 
-bool RemoteController::transmitCommands(const std::vector<std::uint8_t> &commands)
+bool RemoteController::transmitCommands(const std::vector<uint8_t> &commands)
 {
 	// Stream the command data if neccessary -> The first two bytes of each package are the IDENTIFIER COMMAND
 	int commandsSent = 0;
@@ -135,14 +136,14 @@ bool RemoteController::transmitCommands(const std::vector<std::uint8_t> &command
 	while (commandsSent < commands.size())
 	{
 		int commandsInPacket = 0;
-		std::uint8_t *pStart = outgoingBuffer;
+		uint8_t *pStart = outgoingBuffer;
 		
 		// Encode the REMOTECONTROLLER_IDENTIFIER_COMMAND into the binary payload
-		*pStart = (std::uint8_t)(REMOTECONTROLLER_IDENTIFIER_COMMAND >> 8);
-		*(++pStart) = (std::uint8_t)REMOTECONTROLLER_IDENTIFIER_COMMAND;
+		*pStart = (uint8_t)(REMOTECONTROLLER_IDENTIFIER_COMMAND >> 8);
+		*(++pStart) = (uint8_t)REMOTECONTROLLER_IDENTIFIER_COMMAND;
 
 		// Encode the commands
-		while ((commandsInPacket + 2) <= std::min(REMOTECONTROLLER_OUTGOING_BUFFER_SIZE, connection.maxPackageSize) && commandsSent + commandsInPacket <= commands.size())
+		while ((commandsInPacket + 2) <= std::min(REMOTECONTROLLER_OUTGOING_BUFFER_SIZE, connection.getMaxPackageSize()) && commandsSent + commandsInPacket <= commands.size())
 		{
 			*(++pStart) = commands[commandsSent + commandsInPacket];
 			commandsInPacket++;

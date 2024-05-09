@@ -21,20 +21,6 @@ void test_begin()
 	TEST_ASSERT_FALSE(rc.begin(nullptr));
 }
 
-// void test_remotecontroller_commandreceive()
-// {
-// 	Mock<Connection> mockConnection;
-
-// 	When(Method(mockConnection, available)).Return(true);
-// 	When(Method(mockConnection, getPayloadSize)).Return((std::uint8_t)16);
-// 	When(Method(mockConnection, read)).Do([](void *buffer, unsigned int length) -> void {
-// 		// Encode the REMOTECONTROLLER_IDENTIFIER_COMMAND into the binary payload
-// 		std::uint8_t *pStart = static_cast<std::uint8_t*>(buffer);
-// 		*pStart = (std::uint8_t)(REMOTECONTROLLER_IDENTIFIER_COMMAND >> 8);
-// 		*(++pStart) = (std::uint8_t)REMOTECONTROLLER_IDENTIFIER_COMMAND;
-// 		*(++pStart) = 0x01;
-// 		});
-// }
 
 // Test sending commands...
 void test_sendCommand_HighPriority()
@@ -42,14 +28,15 @@ void test_sendCommand_HighPriority()
 	Mock<Connection> mockConnection;
 
 	When(Method(mockConnection, begin)).Return(true);
-
+	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
 		.Do([](const void *buffer, unsigned int length) -> bool
 			{ 
-			std::uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
-			TEST_ASSERT_TRUE((*pStart * 256 + *(++pStart)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
+			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(100, *(++pStart));
+			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart));
 			}).Return(true);
 
 	RemoteController rc(mockConnection.get());
@@ -61,14 +48,15 @@ void test_sendCommand_NormalPriority() {
 	Mock<Connection> mockConnection;
 
 	When(Method(mockConnection, begin)).Return(true);
-
+	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
 		.Do([](const void *buffer, unsigned int length) -> bool
 			{ 
-			std::uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
-			TEST_ASSERT_TRUE((*pStart * 256 + *(++pStart)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
+			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(100, *(++pStart)); })
+			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart)); })
 		.Return(true);
 	When(Method(mockConnection, available)).Return(false);
 
@@ -83,12 +71,13 @@ void test_sendCommandWithThrottle_HighPriority()
 	Mock<Connection> mockConnection;
 
 	When(Method(mockConnection, begin)).Return(true);
-
+	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
 		.Do([](const void *buffer, unsigned int length) -> bool
 			{ 
-			std::uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
-			TEST_ASSERT_TRUE((*pStart * 256 + *(++pStart)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
+			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
 			TEST_ASSERT_EQUAL_UINT8(53, *(++pStart)); })
 		.Return(true);
@@ -103,12 +92,13 @@ void test_sendCommandWithThrottle_NormalPriority()
 	Mock<Connection> mockConnection;
 
 	When(Method(mockConnection, begin)).Return(true);
-
+	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
 		.Do([](const void *buffer, unsigned int length) -> bool
 			{ 
-			std::uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
-			TEST_ASSERT_TRUE((*pStart * 256 + *(++pStart)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
+			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
 			TEST_ASSERT_EQUAL_UINT8(53, *(++pStart)); })
 		.Return(true);
@@ -125,20 +115,22 @@ void test_sendCommandMultiple_NormalPriority()
 	Mock<Connection> mockConnection;
 
 	When(Method(mockConnection, begin)).Return(true);
-
+	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
 		.Do([](const void *buffer, unsigned int length) -> bool
 			{ 
-			std::uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
-			TEST_ASSERT_TRUE((*pStart * 256 + *(++pStart)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
+			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(100, *(++pStart));
+			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart));
 			TEST_ASSERT_EQUAL_UINT8(0x03, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(100, *(++pStart));
+			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart));
 			TEST_ASSERT_EQUAL_UINT8(0xBF, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(100, *(++pStart)); })
+			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart)); })
 		.Return(true);
 	When(Method(mockConnection, available)).Return(false);
+
 
 	RemoteController rc(mockConnection.get());
 	rc.begin(nullptr);
@@ -153,12 +145,13 @@ void test_sendCommandMultipleWithThrottle_NormalPriority()
 	Mock<Connection> mockConnection;
 
 	When(Method(mockConnection, begin)).Return(true);
-
+	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 	When(Method(mockConnection, write))
 		.Do([](const void *buffer, unsigned int length) -> bool
 			{ 
-			std::uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
-			TEST_ASSERT_TRUE((*pStart * 256 + *(++pStart)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			uint8_t *pStart = reinterpret_cast<unsigned char *>(const_cast<void *>(buffer));
+			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
+			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
 			TEST_ASSERT_EQUAL_UINT8(53, *(++pStart));
 			TEST_ASSERT_EQUAL_UINT8(0x03, *(++pStart));
