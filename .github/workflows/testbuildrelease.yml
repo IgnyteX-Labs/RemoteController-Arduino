@@ -36,6 +36,7 @@ jobs:
           PLATFORMIO_CI_SRC: ${{ matrix.example }}
       
   versioning:
+    needs: test
     name: Determine version and Release
     permissions: write-all
 
@@ -165,12 +166,12 @@ jobs:
 
       - name: Release when on main branch
         id: createrelease
-        uses: actions/create-release@main
+        uses: softprops/action-gh-release@v2
         if: ${{ steps.versioninfo.outputs.branchname == 'main'}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.selectversion.outputs.buildversion }}
-          release_name: Release ${{ steps.selectversion.outputs.buildversion }}
+          name: Release ${{ steps.selectversion.outputs.buildversion }}
+          token: ${{secrets.GITHUB_TOKEN}}
           draft: false
           prerelease: false
+          generate_release_notes: true
