@@ -43,7 +43,7 @@ public:
 	 * 
 	 * @return int
 	 */
-	virtual int getPayloadSize() = 0;
+	virtual size_t getPayloadSize() = 0;
 
 	/**
 	 * @brief Writes data to the other RemoteController
@@ -59,7 +59,7 @@ public:
 	 * @brief The maximum size, in byte, that can be send in one package i.e. with one Connection::write() call. HAS TO BE AN EVEN NUMBER!!
 	 * 
 	 */
-	virtual int getMaxPackageSize() = 0;
+	virtual size_t getMaxPackageSize() = 0;
 };
 
 #endif

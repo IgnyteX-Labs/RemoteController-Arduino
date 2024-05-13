@@ -18,7 +18,7 @@ void RF24Connection::read(void *buffer, size_t length)
 {
 }
 
-int RF24Connection::getPayloadSize()
+size_t RF24Connection::getPayloadSize()
 {
 }
 
@@ -26,6 +26,6 @@ bool RF24Connection::write(const void *buffer, size_t length)
 {
 }
 
-int RF24Connection::getMaxPackageSize() {
+size_t RF24Connection::getMaxPackageSize() {
 	return 32;
 }

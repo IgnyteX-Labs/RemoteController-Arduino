@@ -10,9 +10,9 @@ public:
 	void end();
 	bool available();
 	void read(void *buffer, size_t length);
-	int getPayloadSize();
+	size_t getPayloadSize();
 	bool write(const void *buffer, size_t length);
-	int getMaxPackageSize();
+	size_t getMaxPackageSize();
 };
 
 #endif
