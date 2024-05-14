@@ -23,7 +23,7 @@ public:
 	virtual void end() = 0;
 	
 	/**
-	 * @brief This function checks for incoming data and needs to be called repeteadly!
+	 * @brief This function checks for incoming data and is called repeteadly!
 	 * 
 	 * @return true New data is available and needs to be handled
 	 * @return false No data available can be skipped
@@ -41,7 +41,7 @@ public:
 	/**
 	 * @brief Get the size of the payload that will be read with Connection::read()
 	 * 
-	 * @return int
+	 * @return size_t
 	 */
 	virtual size_t getPayloadSize() = 0;
 
@@ -49,8 +49,8 @@ public:
 	 * @brief Writes data to the other RemoteController
 	 * 
 	 * @param buffer where the data to transmit is stored
-	 * @param length length/size of the payload
-	 * @return true succesfully transmission
+	 * @param length length/size of the payload/buffer
+	 * @return true succesfull transmission (ack received)
 	 * @return false failed to transmit
 	 */
 	virtual bool write(const void *buffer, size_t length) = 0;
