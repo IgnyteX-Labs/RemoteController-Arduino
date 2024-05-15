@@ -10,14 +10,14 @@ class Connection
 {
 public:
 	/**
-	 * @brief Initiates and tests the Connection to the other RemoteController (the other device)
+	 * @brief Connects to and configures any modules needed by the Connection to transceive/receive
 	 *
-	 * @return true The connection was initiated and tested successfully
-	 * @return false Could not connect to the other RemoteController
+	 * @return true if the connection to and configuration of the required modules was successful
+	 * @return false if failed to configure or connect
 	 */
 	virtual bool begin() = 0;
 	/**
-	 * @brief Closes the connection to the other RemoteController and frees all the memory occupied
+	 * @brief Closes the connection and frees all the memory occupied
 	 * 
 	 */
 	virtual void end() = 0;
@@ -41,7 +41,7 @@ public:
 	/**
 	 * @brief Get the size of the payload that will be read with Connection::read()
 	 * 
-	 * @return size_t
+	 * @return size_t payload size in bytes, should return <1  if the payload is corrupt
 	 */
 	virtual size_t getPayloadSize() = 0;
 
