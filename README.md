@@ -29,8 +29,13 @@ __1.__ At the top of your Project include the RemoteController header and create
 
 ```[c++]
 #include <RemoteController.h>
+#include <Connections/RF24Connection.h>
 
-RF24Connection connection; /* Using the RF24 Connection but any other can also be used. */
+// Wiring of the NRF24L01 module
+#define CE_PIN 7
+#define CSN_PIN 8
+
+RF24Connection connection(CE_PIN, CSN_PIN); /* Using the RF24 Connection but any other can also be used. */
 RemoteController rc(connection);
 ```
 
@@ -68,7 +73,7 @@ __3.__ In the `void setup()` function initialize the RemoteController. Pass one 
 ```[c++]
 if(!rc.begin(commandReceivedCallback, payloadReceivedCallback)) {
     // Failed to begin
-    Serial.println(rc.getErrorDescription());
+    Serial.println(rc.getErrorDescription().c_str());
 }
 ```
 
@@ -77,7 +82,7 @@ __4.__ In the `void loop()` function repeatedly call the RemoteController::run()
 ```[c++]
 if(!rc.run()) {
     // An error occured
-    Serial.prinln(rc.getErrorDescription());
+    Serial.println(rc.getErrorDescription().c_str());
 }
 ```
 
