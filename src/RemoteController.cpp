@@ -76,6 +76,8 @@ std::string RemoteController::getErrorDescription()
 		return "The Command Queue is full. Too many commands where added and not transmitted. CAUSES UNDEFINED BEHAVIOR until a connection is established and commands are succesfully transmitted!";
 	case FailedToTransmitCustomPayload:
 		return "The Connection::write() failed to transmit the payload (No ack received)";
+	case ReceivedCorruptPacket:
+		return "The packet that was received and triggered Connection::available() is corrupt and cannot be read!";
 	default:
 		return "Unknown Error";
 	}
@@ -104,8 +106,15 @@ bool RemoteController::run()
 	// Check and process incomming commands and payloads
 	if (connection.available())
 	{
-		connection.read(incomingBuffer, REMOTECONTROLLER_INCOMING_BUFFER_SIZE);
 		size_t payloadSize = std::min((int)connection.getPayloadSize(), REMOTECONTROLLER_INCOMING_BUFFER_SIZE);
+		// Check if the packet is corrupt
+		if(payloadSize < 1)
+		{
+			error = ReceivedCorruptPacket;
+			return false;
+		}
+		// Read the valid packet into the buffer
+		connection.read(incomingBuffer, payloadSize);
 		uint8_t *pStart = incomingBuffer;
 
 		// Check the first two bytes of the buffer for RemoteController Command identifier

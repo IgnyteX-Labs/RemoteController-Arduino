@@ -123,7 +123,8 @@ public:
 		FailedToTransmitCommands /** The RemoteController failed to transmit the commands because the Connection didn't succesfully transmit the data*/,
 		CommandQueueFull /** The Command Queue is full. Too many commands where added and not transmitted. CAUSES UNDEFINED BEHAVIOR until a connection is established and commands are succesfully transmitted!*/,
 		CustomPayloadTooBig /** Buffer overflow prevented: The payload that was tried to be send with RemoteController::sendPayload() was too big for the Connection package buffer*/,
-		FailedToTransmitCustomPayload /** The Connection::write() failed to transmit the payload (No ack received)*/
+		FailedToTransmitCustomPayload /** The Connection::write() failed to transmit the payload (No ack received)*/,
+		ReceivedCorruptPacket /** The packet that was received and triggered Connection::available() is corrupt and cannot be read! */
 	};
 	
 	/**
