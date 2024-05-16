@@ -1,16 +1,14 @@
 #include "Connections/RF24Connection.h"
 
-RF24Connection::RF24Connection(int cepin, int cspin) : rf24(RF24(cepin, cspin)), rf24_address("RF000")
+RF24Connection::RF24Connection(int cepin, int cspin, const uint8_t *address) : rf24(RF24(cepin, cspin))
 {
+	memcpy(rf24_address, address, 5);
 }
 
-RF24Connection::RF24Connection(RF24 &rf24) : rf24(rf24), rf24_address("RF000")
+RF24Connection::RF24Connection(RF24 &rf24, const uint8_t *address) : rf24(rf24)
 {
+	memcpy(rf24_address, address, 5);
 	isRF24Initialized = true;
-}
-
-RF24Connection::RF24Connection() : rf24(RF24()), rf24_address("RF000")
-{
 }
 
 void RF24Connection::useSpecificSPIBus(_SPI *spiBus)
