@@ -1,6 +1,8 @@
 name: Test, Build and Release
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     branches: [main, develop]
 
@@ -10,7 +12,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        example: [examples/CustomConnection.ino, examples/GettingStarted.ino]
         os: [ubuntu-latest, macos-latest, windows-latest]
         
     steps:
@@ -31,9 +32,9 @@ jobs:
       - name: Run tests on the native platform
         run: platformio test -e test_native
       - name: Build Examples
-        run: pio ci --project-conf=platformio.ini --environment=production
-        env:
-          PLATFORMIO_CI_SRC: ${{ matrix.example }}
+        run: |
+          pio ci --project-conf=platformio.ini --environment=production --lib= examples/CustomConnection/CustomConnection.ino
+          pio ci --project-conf=platformio.ini --environment=production --lib= examples/GettingStartedRF24/GettingStartedRF24.ino
       
   versioning:
     needs: test
@@ -161,7 +162,7 @@ jobs:
           echo "  Major         : ${{ steps.selectversion.outputs.nextmajordigit }}"
           echo "  Minor         : ${{ steps.selectversion.outputs.nextminordigit }}"
           echo "  Patch         : ${{ steps.selectversion.outputs.nextpatchdigit }}"
-          echo "Build Filename  : ${{ steps.selectversion.outputs.buildversionfilename }}.hex"
+          echo "Build Filename  : ${{ steps.selectversion.outputs.buildversionfilename }}"
           echo "Build Timestamp : ${{ steps.versioninfo.outputs.buildtimestamp }}"
 
       - name: Release when on main branch

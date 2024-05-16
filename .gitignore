@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+# PlatformIO
+.pio
+src/main.cpp
+docs/*
+!docs/Doxyfile
+
+# Vscode
+.vscode
+*.DS_Store
