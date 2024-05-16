@@ -6,6 +6,10 @@
 
 #define REMOTECONTROLLER_RF24CONNECTION_DEFAULT_ADDRESS "RF000"
 
+/**
+ * @brief A Connection Implementation for the common NRF24L01 modules uses the nrf24/RF24 library internally!
+ * 
+ */
 class RF24Connection : public Connection
 {
 public:
@@ -43,7 +47,7 @@ public:
 	 * @note When using a c-string as address account for the null-terminator (a 6th byte), thus use const uint8_t[6]
 	 *
 	 */
-	RF24Connection(int cepin, int cspin, const uint8_t *address = REMOTECONTROLLER_RF24CONNECTION_DEFAULT_ADDRESS);
+	RF24Connection(int cepin, int cspin, const uint8_t *address = (const uint8_t*) REMOTECONTROLLER_RF24CONNECTION_DEFAULT_ADDRESS);
 
 	/**
 	 * @brief Construct a new RF24Connection object
@@ -54,7 +58,7 @@ public:
 	 * @note When using a c-string as address account for the null-terminator (a 6th byte), thus use const uint8_t[6]
 	 * 
 	 */
-	RF24Connection(RF24 &rf24, const uint8_t *address = REMOTECONTROLLER_RF24CONNECTION_DEFAULT_ADDRESS);
+	RF24Connection(RF24 &rf24, const uint8_t *address = (const uint8_t *) REMOTECONTROLLER_RF24CONNECTION_DEFAULT_ADDRESS);
 
 	/**
 	 * @brief Allows to optionally specify a non-default SPI bus to use.

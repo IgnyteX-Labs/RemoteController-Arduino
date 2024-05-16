@@ -5,7 +5,10 @@
 #include "Connections/RF24Connection.h"
 
 // Remote Controller configuration
-RF24Connection connection;
+#define CE_PIN 10
+#define CS_PIN 11
+
+RF24Connection connection(CE_PIN, CS_PIN);
 RemoteController rc(connection);
 
 enum Commands : uint8_t
