@@ -7,17 +7,23 @@ Library for the Arduino Framework to implement any type of remote control to Ard
 The library supports the following connection protocols for the Remote Controller out of the box.
 
 - __RF24__ (Using the [RF24 Library](https://github.com/nRF24/RF24))
+- *__SPI__ (Implementation planned)*
 - *__Bluetooth__ (Implementation planned)*
-- *__Wifi__ (Implementation planned)*
+- *__Wifi__ (Implementation not planned for now)*
 
 Custom or more sophisticated connection protocols can be added by creating a class conforming to the `Connection` class. For the implementation requirements please refer to the docs.
 
 ## Supported Platforms and Boards
 
-The library currently supports the following platforms/boards, with the Arduino Framework:
+The library currently supports (& was tested on) the following platforms/boards, with the Arduino Framework:
 
-- __espressif32__ (The following boards where tested)
-  - esp32dev
+- __espressif32__
+  - ESP32 Dev Module (esp32dev)
+  - etc.
+- __atmelavr__
+  - Arduino Nano (nanoatmega328)
+  - Arduino Uno
+  - etc.
 
 More will be added in the future!
 
@@ -50,13 +56,22 @@ enum Commands:uint8_t {
 __2.__ Create the callback functions, that will be called when a `Command` or a custom payload is received.
 
 ```[c++]
-void commandReceivedCallback(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle) {
+void commandReceivedCallback(const uint8_t commands[], const float throttles[], size_t length)
+{
     // Do something with the received commands
-    for(auto command:commands) {
-        if(command == GoForward) {
+    for (size_t i = 0; i < length; i++)
+    {
+        if (commands[i] == GoForward)
+        {
             // Go Forward
-        }else if(command == GoBackward) {
-            // Go backward
+            Serial.print("GoForward with throttle: ");
+            Serial.println(throttles[i]);
+        }
+        else if (commands[i] == GoBackward)
+        {
+            // Go Forward
+            Serial.print("GoBackward with throttle: ");
+            Serial.println(throttles[i]);
         }
     }
 }
@@ -73,7 +88,7 @@ __3.__ In the `void setup()` function initialize the RemoteController. Pass one 
 ```[c++]
 if(!rc.begin(commandReceivedCallback, payloadReceivedCallback)) {
     // Failed to begin
-    Serial.println(rc.getErrorDescription().c_str());
+    Serial.println(rc.getErrorDescription());
 }
 ```
 
@@ -82,7 +97,7 @@ __4.__ In the `void loop()` function repeatedly call the RemoteController::run()
 ```[c++]
 if(!rc.run()) {
     // An error occured
-    Serial.println(rc.getErrorDescription().c_str());
+    Serial.println(rc.getErrorDescription());
 }
 ```
 
