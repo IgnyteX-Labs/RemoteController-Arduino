@@ -23,7 +23,7 @@ void test_sendCommand_HighPriority()
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
 			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart));
+			TEST_ASSERT_EQUAL_FLOAT(0, *(float *)(++pStart));
 			return true; });
 	RemoteController rc(mockConnection.get());
 	rc.begin(nullptr);
@@ -45,7 +45,7 @@ void test_sendCommand_NormalPriority()
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
 			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart));
+			TEST_ASSERT_EQUAL_FLOAT(0, *(float *)(++pStart));
 			return true; });
 	When(Method(mockConnection, available)).Return(false);
 	RemoteController rc(mockConnection.get());
@@ -69,7 +69,7 @@ void test_sendCommandWithThrottle_HighPriority()
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
 			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(53, *(++pStart));
+			TEST_ASSERT_EQUAL_FLOAT(53, *(float *)(++pStart));
 			return true; });
 	RemoteController rc(mockConnection.get());
 	rc.begin(nullptr);
@@ -90,7 +90,7 @@ void test_sendCommandWithThrottle_NormalPriority()
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
 			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(53, *(++pStart));
+			TEST_ASSERT_EQUAL_FLOAT(53, *(float *)(++pStart));
 			return true; });
 	When(Method(mockConnection, available)).Return(false);
 	RemoteController rc(mockConnection.get());
@@ -114,11 +114,13 @@ void test_sendCommandMultiple_NormalPriority()
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
 			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(0x03, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(0xBF, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, *(++pStart)); 
+			TEST_ASSERT_EQUAL_FLOAT(0, *(float *)(++pStart));
+			pStart += 4;
+			TEST_ASSERT_EQUAL_UINT8(0x03, *(pStart));
+			TEST_ASSERT_EQUAL_FLOAT(0, *(float *)(++pStart));
+			pStart += 4;
+			TEST_ASSERT_EQUAL_UINT8(0xBF, *(pStart));
+			TEST_ASSERT_EQUAL_FLOAT(0, *(float *)(++pStart)); 
 			return true; });
 	When(Method(mockConnection, available)).Return(false);
 	RemoteController rc(mockConnection.get());
@@ -144,11 +146,13 @@ void test_sendCommandMultipleWithThrottle_NormalPriority()
 			TEST_ASSERT_TRUE((*pStart * 256 + *(pStart+1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND); // Check identifier command
 			pStart++;
 			TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(53, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(0x03, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(66, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(0xBF, *(++pStart));
-			TEST_ASSERT_EQUAL_UINT8(255, *(++pStart)); 
+			TEST_ASSERT_EQUAL_FLOAT(53, *(float *)(++pStart));
+			pStart += 4;
+			TEST_ASSERT_EQUAL_UINT8(0x03, *(pStart));
+			TEST_ASSERT_EQUAL_FLOAT(66, *(float *)(++pStart));
+			pStart += 4;
+			TEST_ASSERT_EQUAL_UINT8(0xBF, *(pStart));
+			TEST_ASSERT_EQUAL_FLOAT(255, *(float *)(++pStart)); 
 			return true; });
 	When(Method(mockConnection, available)).Return(false);
 	RemoteController rc(mockConnection.get());
@@ -166,7 +170,7 @@ void test_sendCommandStreaming()
 	Mock<Connection> mockConnection;
 	Fake(Method(mockConnection, end));
 	When(Method(mockConnection, begin)).Return(true);
-	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(4);
+	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(8);
 	int writeCalled = 0;
 	When(Method(mockConnection, write))
 		.AlwaysDo([&writeCalled](const void *buffer, size_t length) -> bool
@@ -177,12 +181,12 @@ void test_sendCommandStreaming()
 			pStart++;
 			if(writeCalled == 1) {
 				TEST_ASSERT_EQUAL_UINT8(0x01, *(++pStart));
-				TEST_ASSERT_EQUAL_UINT8(53, *(++pStart));
+				TEST_ASSERT_EQUAL_FLOAT(53, *(float *)(++pStart));
 			}else {
-				TEST_ASSERT_EQUAL_size_t(4, length);
+				TEST_ASSERT_EQUAL_size_t(7, length);
 				TEST_ASSERT_LESS_OR_EQUAL_INT_MESSAGE(2, writeCalled, "The rc should only call Connection::write twice");
 				TEST_ASSERT_EQUAL_UINT8(0x03, *(++pStart));
-				TEST_ASSERT_EQUAL_UINT8(66, *(++pStart));
+				TEST_ASSERT_EQUAL_FLOAT(66, *(float *)(++pStart));
 			}
 			return true; });
 	When(Method(mockConnection, available)).Return(false);
@@ -204,13 +208,13 @@ void test_sendCommandPackageSize()
 	When(Method(mockConnection, write))
 		.Do([](const void *buffer, size_t length) -> bool
 			{ 
-			TEST_ASSERT_EQUAL_size_t(6, length);
+			TEST_ASSERT_EQUAL_size_t(12, length);
 			return true; });
 	When(Method(mockConnection, available)).Return(false);
 	RemoteController rc(mockConnection.get());
 	rc.begin(nullptr);
-	rc.sendCommand(0x01, 53, RemoteController::Normal); // 2 byte
-	rc.sendCommand(0x03, 66, RemoteController::Normal); // 2 byte + 2 byte identifer = 6 byte
+	rc.sendCommand(0x01, 53, RemoteController::Normal); // 5 byte
+	rc.sendCommand(0x03, 66, RemoteController::Normal); // 5 byte + 2 byte identifer = 12 byte
 	rc.run();
 	TEST_ASSERT_TRUE(Verify(Method(mockConnection, write)).Once());
 	rc.end();

@@ -2,7 +2,7 @@
 
 #include <SPI.h>
 #include "RemoteController.h"
-#include "Connections/RF24Connection.h"
+#include "Connections/RF24Connection.h" // Uses the nrf24/RF24 library...
 
 // Remote Controller configuration
 #define CE_PIN 10
@@ -20,20 +20,22 @@ enum Commands : uint8_t
 	ToggleLED // Add any commands you wish
 };
 
-void commandReceivedCallback(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)
+void commandReceivedCallback(const uint8_t commands[], const float throttle[], size_t length)
 {
 	// Do something with the received commands
-	for (auto command : commands)
+	for (size_t i = 0; i < length; i++)
 	{
-		if (command == GoForward)
+		if (commands[i] == GoForward)
 		{
 			// Go Forward
-			Serial.println("GoForward");
+			Serial.print("GoForward with throttle: ");
+			Serial.println(throttle[i]);
 		}
-		else if (command == GoBackward)
+		else if (commands[i] == GoBackward)
 		{
-			// Go backward
-			Serial.println("GoBackward");
+			// Go Forward
+			Serial.print("GoBackward with throttle: ");
+			Serial.println(throttle[i]);
 		}
 	}
 }
@@ -53,7 +55,7 @@ void setup()
 	if (!rc.begin(commandReceivedCallback, payloadReceivedCallback))
 	{
 		// Failed to begin
-		Serial.println(rc.getErrorDescription().c_str());
+		Serial.println(rc.getErrorDescription());
 	}
 }
 
@@ -62,7 +64,7 @@ void loop() {
 	if (!rc.run())
 	{
 		// An error occured
-		Serial.println(rc.getErrorDescription().c_str());
+		Serial.println(rc.getErrorDescription());
 	}
 
 	// Send example commands every 2 sec (non blocking) (do not use delay(2000))

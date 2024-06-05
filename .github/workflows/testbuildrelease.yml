@@ -33,8 +33,10 @@ jobs:
         run: platformio test -e test_native
       - name: Build Examples
         run: |
-          pio ci --project-conf=platformio.ini --environment=production --lib= examples/CustomConnection/CustomConnection.ino
-          pio ci --project-conf=platformio.ini --environment=production --lib= examples/GettingStartedRF24/GettingStartedRF24.ino
+          pio ci --project-conf=platformio.ini --environment=prod_esp32 --lib= examples/CustomConnection/CustomConnection.ino
+          pio ci --project-conf=platformio.ini --environment=prod_esp32 --lib= examples/GettingStartedRF24/GettingStartedRF24.ino
+          pio ci --project-conf=platformio.ini --environment=prod_avr --lib= examples/CustomConnection/CustomConnection.ino
+          pio ci --project-conf=platformio.ini --environment=prod_avr --lib= examples/GettingStartedRF24/GettingStartedRF24.ino
       
   versioning:
     needs: test

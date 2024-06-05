@@ -9,14 +9,15 @@ RemoteController::~RemoteController()
 {
 }
 
-bool RemoteController::begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb)
+#if defined(RC_ARCH_USE_FUNCTIONAL)
+bool RemoteController::begin(std::function<void(const uint8_t commands[], const float throttles[], size_t length)> cmdClb)
 {
 	commandCallbackFunction = cmdClb;
 
 	return m_begin();
 }
 
-bool RemoteController::begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, size_t length)> pldClb)
+bool RemoteController::begin(std::function<void(const uint8_t commands[], const float throttles[], size_t length)> cmdClb, std::function<void(const void *buffer, size_t length)> pldClb)
 {
 	// Assign callbacks
 	commandCallbackFunction = cmdClb;
@@ -24,6 +25,24 @@ bool RemoteController::begin(std::function<void(const std::vector<uint8_t> &comm
 
 	return m_begin();
 }
+#else
+bool RemoteController::begin(void (*cmdClb)(const uint8_t commands[], const float throttles[], size_t length))
+{
+	commandCallbackFunction = cmdClb;
+	payloadCallbackFunction = NULL;
+
+	return m_begin();
+}
+
+bool RemoteController::begin(void (*cmdClb)(const uint8_t commands[], const float throttles[], size_t length), void (*pldClb)(const void *buffer, size_t length))
+{
+	commandCallbackFunction = cmdClb;
+	payloadCallbackFunction = pldClb;
+
+	return m_begin();
+}
+
+#endif
 
 bool RemoteController::m_begin()
 {
@@ -35,26 +54,14 @@ bool RemoteController::m_begin()
 		return false;
 	}
 
-	incomingBuffer = new uint8_t[REMOTECONTROLLER_INCOMING_BUFFER_SIZE];
-	outgoingBuffer = new uint8_t[REMOTECONTROLLER_OUTGOING_BUFFER_SIZE];
-	incomingCommandsBuffer.reserve(10);
-	incomingThrottlesBuffer.reserve(10);
-	commandQueue.reserve(20);
-
 	error = NoError;
 	return true;
 }
 
 void RemoteController::end()
 {
+	// At the moment no RemoteController specific dynamically allocated memory to free...
 	connection.end();
-	commandQueue.clear();
-	commandQueue.shrink_to_fit();
-
-	delete[] incomingBuffer;
-	delete[] outgoingBuffer;
-	incomingBuffer = nullptr;
-	outgoingBuffer = nullptr;
 }
 
 uint8_t RemoteController::getErrorCode()
@@ -62,7 +69,7 @@ uint8_t RemoteController::getErrorCode()
 	return error;
 }
 
-std::string RemoteController::getErrorDescription()
+_String RemoteController::getErrorDescription()
 {
 	switch (error)
 	{
@@ -86,17 +93,17 @@ std::string RemoteController::getErrorDescription()
 bool RemoteController::run()
 {
 	// Transmit the queued commands to the receiver
-	if (commandQueue.size() > REMOTECONTROLLER_MAX_COMMAND_QUEUE_SIZE)
+	if (commandQueueIndex != 0)
 	{
-		commandQueue.clear();
-		error = CommandQueueFull;
-		return false;
-	}
-	if (!commandQueue.empty())
-	{
-		if (transmitCommands(commandQueue))
+		if (transmitCommands(commandQueue, commandQueueIndex))
 		{
-			commandQueue.clear(); // Clear the command queue as those commands where succesfully transmitted
+			commandQueueIndex = 0; // Clear the command queue as those commands where succesfully transmitted
+								   // Note: the actual data is not cleared as it will be overwritten as needed by new data
+			// Check if the command queue was overfilled...
+			if (error == CommandQueueFull)
+			{
+				return false;
+			}
 		}
 		else
 		{
@@ -106,9 +113,9 @@ bool RemoteController::run()
 	// Check and process incomming commands and payloads
 	if (connection.available())
 	{
-		size_t payloadSize = std::min((int)connection.getPayloadSize(), REMOTECONTROLLER_INCOMING_BUFFER_SIZE);
+		size_t payloadSize = rcmin((int)connection.getPayloadSize(), REMOTECONTROLLER_INCOMING_BUFFER_SIZE);
 		// Check if the packet is corrupt
-		if(payloadSize < 1)
+		if (payloadSize < 1)
 		{
 			error = ReceivedCorruptPacket;
 			return false;
@@ -120,23 +127,22 @@ bool RemoteController::run()
 		// Check the first two bytes of the buffer for RemoteController Command identifier
 		if ((*pStart * 256 + *(pStart + 1)) == REMOTECONTROLLER_IDENTIFIER_COMMAND)
 		{
-			pStart++;
-			int len = (payloadSize-2)/2; // The amount of incoming command&throttle pairs (-2 bytes because of the identifier and /2 as one pair is 2 bytes big)
+			pStart += 2;
+			int len = (payloadSize - 2) / 5; // The amount of incoming command&throttle pairs (-2 bytes because of the identifier and /5 as one pair is 5 bytes big)
+			int bufferIndex = 0;
 			while (len--)
 			{
-				incomingCommandsBuffer.push_back(*(++pStart));
-				incomingThrottlesBuffer.push_back(*(++pStart));
+				incomingCommandsBuffer[bufferIndex] = *(pStart++);
+				incomingThrottlesBuffer[bufferIndex] = *((float *)pStart);
+				pStart += 4;
+				bufferIndex++;
 			}
 			// Commands successfully parsed
 
 			if (commandCallbackFunction)
 			{
-				commandCallbackFunction(incomingCommandsBuffer, incomingThrottlesBuffer);
+				commandCallbackFunction(incomingCommandsBuffer, incomingThrottlesBuffer, bufferIndex);
 			}
-			
-			// Clear the incoming vector buffers after calling the callback
-			incomingCommandsBuffer.clear();
-			incomingThrottlesBuffer.clear();
 		}
 		else
 		{
@@ -154,29 +160,45 @@ bool RemoteController::run()
 
 void RemoteController::sendCommand(uint8_t command, Priority priority)
 {
-	sendCommand(command, UINT8_MAX, priority);
+	sendCommand(command, 0, priority);
 }
 
-void RemoteController::sendCommand(uint8_t command, uint8_t throttle, Priority priority)
+void RemoteController::sendCommand(uint8_t command, float throttle, Priority priority)
 {
 	if (priority == Normal)
 	{
-		// Check if the command queue is full...
-		commandQueue.push_back(command);
-		commandQueue.push_back(throttle);
-		return;
+		addToCommandQueue(command, throttle);
 	}
 	else if (priority == High)
 	{
-		if (!transmitCommands({command, throttle}))
+		uint8_t encodedCommand[5];
+		encodeCommand(command, throttle, encodedCommand);
+		if (!transmitCommands(encodedCommand, 5))
 		{
 			/// - Failed to transmit log error message and add to commandqueue to transmit the command later
-			commandQueue.push_back(command);
-			commandQueue.push_back(throttle);
+			addToCommandQueue(command, throttle);
 			error = FailedToTransmitCommands;
 		}
+	}
+}
+
+void RemoteController::addToCommandQueue(uint8_t command, float throttle)
+{
+	// Check if the command queue is full...
+	if (commandQueueIndex >= REMOTECONTROLLER_COMMAND_QUEUE_SIZE)
+	{
+		error = CommandQueueFull;
 		return;
 	}
+
+	encodeCommand(command, throttle, commandQueue + commandQueueIndex);
+	commandQueueIndex += (sizeof command + sizeof throttle);
+}
+
+void RemoteController::encodeCommand(uint8_t command, float throttle, uint8_t *buffer)
+{
+	*buffer++ = command;
+	*(float *)buffer = throttle;
 }
 
 bool RemoteController::sendPayload(const void *buffer, size_t length)
@@ -194,14 +216,16 @@ bool RemoteController::sendPayload(const void *buffer, size_t length)
 	return true;
 }
 
-bool RemoteController::transmitCommands(const std::vector<uint8_t> &commands)
+bool RemoteController::transmitCommands(const uint8_t commands[], size_t length)
 {
 	// Stream the command data if neccessary -> The first two bytes of each package are the IDENTIFIER COMMAND
-	int commandsSent = 0;
-
-	while (commandsSent < commands.size())
+	int bytesSent = 0;
+	const int maxPackageSize = rcmin(REMOTECONTROLLER_OUTGOING_BUFFER_SIZE, (int)connection.getMaxPackageSize()); // Actual maximum size in byte that can be sent in one packet
+	int maxPackedSize; // The maxPackedSize is set to the maximum size the exactly fits 2bytes identifer and x many commands into the actual maximum package size that is possible
+	maxPackedSize = (((int)((maxPackageSize - 2) / REMOTECONTROLLER_ENCODED_COMMAND_SIZE)) * REMOTECONTROLLER_ENCODED_COMMAND_SIZE) + 2;
+	while (bytesSent < length)
 	{
-		int commandsInPacket = 0;
+		int bytesInPacket = 0;
 		uint8_t *pStart = outgoingBuffer;
 
 		// Encode the REMOTECONTROLLER_IDENTIFIER_COMMAND into the binary payload
@@ -209,19 +233,19 @@ bool RemoteController::transmitCommands(const std::vector<uint8_t> &commands)
 		*(++pStart) = (uint8_t)REMOTECONTROLLER_IDENTIFIER_COMMAND;
 
 		// Encode the commands
-		while ((commandsInPacket + 2) < std::min(REMOTECONTROLLER_OUTGOING_BUFFER_SIZE, (int)connection.getMaxPackageSize()) && commandsSent + commandsInPacket < commands.size())
+		while ((bytesInPacket + 2) < maxPackedSize && bytesSent + bytesInPacket < length)
 		{
-			commandsInPacket++;
-			*(++pStart) = commands[commandsSent + (commandsInPacket - 1)];
+			bytesInPacket++;
+			*(++pStart) = commands[bytesSent + (bytesInPacket - 1)];
 		}
 
 		// Try to transmit the payload
-		if (!connection.write(outgoingBuffer, commandsInPacket + 2))
+		if (!connection.write(outgoingBuffer, bytesInPacket + 2))
 		{
 			error = FailedToTransmitCommands;
 			return false;
 		}
-		commandsSent += commandsInPacket;
+		bytesSent += bytesInPacket;
 	}
 	return true;
 }
