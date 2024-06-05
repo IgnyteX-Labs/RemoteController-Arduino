@@ -20,7 +20,7 @@ enum Commands : uint8_t
 	ToggleLED // Add any commands you wish
 };
 
-void commandReceivedCallback(const uint8_t commands[], const float throttle[], size_t length)
+void commandReceivedCallback(const uint8_t commands[], const float throttles[], size_t length)
 {
 	// Do something with the received commands
 	for (size_t i = 0; i < length; i++)
@@ -29,13 +29,13 @@ void commandReceivedCallback(const uint8_t commands[], const float throttle[], s
 		{
 			// Go Forward
 			Serial.print("GoForward with throttle: ");
-			Serial.println(throttle[i]);
+			Serial.println(throttles[i]);
 		}
 		else if (commands[i] == GoBackward)
 		{
 			// Go Forward
 			Serial.print("GoBackward with throttle: ");
-			Serial.println(throttle[i]);
+			Serial.println(throttles[i]);
 		}
 	}
 }
