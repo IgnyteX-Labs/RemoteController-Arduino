@@ -17,28 +17,28 @@ void test_receiveCommands()
 	Fake(Method(mockConnection, end));
 	When(Method(mockConnection, available)).AlwaysReturn(true);
 	When(Method(mockConnection, read)).AlwaysDo([](void *buffer, size_t length) -> void
-										  {
+												{
 		uint8_t *pStart = reinterpret_cast<uint8_t *>(buffer);
 		*(pStart) = (uint8_t)(REMOTECONTROLLER_IDENTIFIER_COMMAND >> 8);
 		*(++pStart) = (uint8_t)REMOTECONTROLLER_IDENTIFIER_COMMAND;
 		*(++pStart) = 0x32;
-		*(++pStart) = 200;
-		*(++pStart) = 0x55;
-		*(++pStart) = UINT8_MAX; });
-	When(Method(mockConnection, getPayloadSize)).AlwaysReturn(6);
+		*(float *)(++pStart) = (float)200;
+		pStart += 4;
+		*pStart = 0x55;
+		*(float *)(++pStart) = (float)0; });
+	When(Method(mockConnection, getPayloadSize)).AlwaysReturn(12);
 	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 
 	RemoteController rc(mockConnection.get());
 	int clb = 0;
-	rc.begin([&clb](const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle) -> void
+	rc.begin([&clb](const uint8_t commands[], const float throttle[], size_t length) -> void
 			 { 
 		clb += 1;
-		TEST_ASSERT_EQUAL_size_t(2, commands.size());
-		TEST_ASSERT_EQUAL_size_t(2, throttle.size());
-		TEST_ASSERT_EQUAL_UINT8(0x32, commands.at(0));
-		TEST_ASSERT_EQUAL_UINT8(200, throttle.at(0));
-		TEST_ASSERT_EQUAL_UINT8(0x55, commands.at(1));
-		TEST_ASSERT_EQUAL_UINT8(UINT8_MAX, throttle.at(1)); });
+		TEST_ASSERT_EQUAL_size_t(2, length);
+		TEST_ASSERT_EQUAL_UINT8(0x32, commands[0]);
+		TEST_ASSERT_EQUAL_FLOAT(200, throttle[0]);
+		TEST_ASSERT_EQUAL_UINT8(0x55, commands[1]);
+		TEST_ASSERT_EQUAL_FLOAT(0, throttle[1]); });
 	// Test receive first batch of commands
 	rc.run();
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, clb, "The Callback function has to be called exactly once!");
@@ -61,8 +61,8 @@ void test_receivePayload()
 		while(len--) {
 			*(pStart++) = 0x55;
 		} });
-	When(Method(mockConnection, getPayloadSize)).Return(16);
-	When(Method(mockConnection, getMaxPackageSize)).Return(32);
+	When(Method(mockConnection, getPayloadSize)).AlwaysReturn(16);
+	When(Method(mockConnection, getMaxPackageSize)).AlwaysReturn(32);
 
 	RemoteController rc(mockConnection.get());
 	int clb = 0;

@@ -1,29 +1,14 @@
 #ifndef REMOTECONTROLLER_H_
 #define REMOTECONTROLLER_H_
 
-#include <vector>
-#include <functional>
-#include <stdint.h>
-#include <stddef.h>
-#include <string>
-#include "Connections/Connection.h"
+#include "ArchConfig.h" // Architecture specific implementation of String, Functional, etc.
+#include "RemoteControllerConfig.h" // RemoteController preprocessor configuration (e.g. Buffer sizes, etc.). To use custom config define REMOTECONTROLLER_CUSTOM_CONFIG
 
-#ifndef REMOTECONTROLLER_INCOMING_BUFFER_SIZE
-#define REMOTECONTROLLER_INCOMING_BUFFER_SIZE 32
-#endif
-#ifndef REMOTECONTROLLER_OUTGOING_BUFFER_SIZE
-#define REMOTECONTROLLER_OUTGOING_BUFFER_SIZE 32
-#endif
-#ifndef REMOTECONTROLLER_MAX_COMMAND_QUEUE_SIZE
-#define REMOTECONTROLLER_MAX_COMMAND_QUEUE_SIZE 128
-#endif
-#ifndef REMOTECONTROLLER_IDENTIFIER_COMMAND
-#define REMOTECONTROLLER_IDENTIFIER_COMMAND 0xEEAF // RemoteController Identifier 2 bytes
-#endif
+#include "Connections/Connection.h"
 
 /**
  * @brief The RemoteController Class provides a simple and easy to use API for RemoteControllers in Embedded Projects.
- * 
+ *
  */
 class RemoteController
 {
@@ -38,28 +23,55 @@ public:
 		High /** the command is sent immediately with the RemoteController::sendCommand() function call */
 	};
 
+	/**
+	 * @brief Construct a new Remote Controller object
+	 *
+	 * @param connection a reference to a Connection object
+	 */
 	RemoteController(Connection &connection);
 	~RemoteController();
 
+#ifdef RC_ARCH_USE_FUNCTIONAL
 	/**
-	 * @brief Starts the RemoteController and connects it to the other controller
+	 * @brief Starts the RemoteController and connects it to the other controller. (Using std::functional)
 	 *
-	 * @param cmdClb this callback function is called with a vector of commands and a vector of throttles corresponding to the commands, when commands are received
+	 * @param cmdClb this std::function callback is called when commands are received and passes the following arguments: (1) a c-array with the commands, (2) a c-array with the throttles, (3) the length of those arrays!
 	 * @return true succesffully started the RemoteController and connected to the other controller
 	 * @return false failed to start or connect
 	 */
-	bool begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb);
+	bool begin(std::function<void(const uint8_t commands[], const float throttles[], size_t length)> cmdClb);
 
 	/**
 	 * @brief Starts the RemoteController and connects it to the other controller
 	 *
-	 * @param cmdClb this callback function is called with a vector of commands and a vector of throttles corresponding to the commands, when commands are received
+	 * @param cmdClb this callback function is called when commands are received and passes the following arguments: (1) a c-array with the commands, (2) a c-array with the throttles, (3) the length of those arrays!
 	 * @param pldClb this callback function is called when a binary payload is received
 	 * @return true succesffully started the RemoteController and connected to the other controller
 	 * @return false failed to start or connect
 	 */
-	bool begin(std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)> cmdClb, std::function<void(const void *buffer, size_t length)> pldClb);
-	
+	bool begin(std::function<void(const uint8_t commands[], const float throttles[], size_t length)> cmdClb, std::function<void(const void *buffer, size_t length)> pldClb);
+#else
+	/**
+	 * @brief Starts the RemoteController and connects it to the other controller. (Using C function pointers)
+	 *
+	 * @param cmdClb this c-function pointer callback is called when commands are received and passes the following arguments: (1) a c-array with the commands, (2) a c-array with the throttles, (3) the length of those arrays!
+	 * @return true succesffully started the RemoteController and connected to the other controller
+	 * @return false failed to start or connect
+	 */
+	bool begin(void (*cmdClb)(const uint8_t commands[], const float throttles[], size_t length));
+
+	/**
+	 * @brief Starts the RemoteController and connects it to the other controller
+	 *
+	 * @param cmdClb this callback function is called when commands are received and passes the following arguments: (1) a c-array with the commands, (2) a c-array with the throttles, (3) the length of those arrays!
+	 * @param pldClb this callback function is called when a binary payload is received
+	 * @return true succesffully started the RemoteController and connected to the other controller
+	 * @return false failed to start or connect
+	 */
+	bool begin(void (*cmdClb)(const uint8_t commands[], const float throttles[], size_t length), void (*pldClb)(const void *buffer, size_t length));
+#endif
+
+
 	/**
 	 * @brief Closes the RemoteController connection and frees all occupied memory
 	 *
@@ -68,15 +80,15 @@ public:
 
 	/**
 	 * @brief This function has to be called repeatedly in a loop! It handles the transmission of queued commands and receiving of commands/payloads.
-	 * 
+   *
 	 * @return true RemoteController tasks where handled successfully
 	 * @return false An Error occured, get error using RemoteController::getErrorCode() or RemoteController::getErrorDescription()
 	 */
 	bool run();
 
 	/**
-	 * @brief Sends a command to the other controller without throttle (throttle is set to 255 internally)
-	 *
+	 * @brief Sends a command to the other controller without throttle
+	 * @note The throttle is set internally (to 0) to comply with RemoteController-Protocol encoding requirements.
 	 * @param command The command to be sent (should be implemented as enum on both RemoteControllers)
 	 * @param priority The Priority with which the command should be sent
 	 */
@@ -89,7 +101,7 @@ public:
 	 * @param throttle a uint8_t (0-255) value to be sent alongside the command for throttle, etc. control
 	 * @param priority The Priority with which the command should be sent
 	 */
-	void sendCommand(uint8_t command, uint8_t throttle, Priority priority = Priority::Normal);
+	void sendCommand(uint8_t command, float throttle, Priority priority = Priority::Normal);
 
 	/**
 	 * @brief Sends a binary payload to the other RemoteController. Basically a wrapper for Connection::write()
@@ -114,7 +126,7 @@ public:
 	};
 	/**
 	 * @brief Errors that can occur in the RemoteController, these are handled to the best ability by the RemoteControllerClass itself
-	 * 
+	 *
 	 */
 	enum Error : uint8_t
 	{
@@ -126,41 +138,52 @@ public:
 		FailedToTransmitCustomPayload /** The Connection::write() failed to transmit the payload (No ack received)*/,
 		ReceivedCorruptPacket /** The packet that was received and triggered Connection::available() is corrupt and cannot be read! */
 	};
-	
+
 	/**
-	 * @brief Get the current Error Code 
-	 * 
+	 * @brief Get the current Error Code
+	 *
 	 * @return uint8_t 8bit error code, defined in RemoteController::Error
 	 */
 	uint8_t getErrorCode();
 
 	/**
 	 * @brief Get the Description of the current Error (Code)
-	 * 
-	 * @return String Humand readable error description
+	 *
+	 * @return String Human readable error description
 	 */
-	std::string getErrorDescription();
-	
+	_String getErrorDescription();
+
 #ifndef UNIT_TEST
 private:
 #endif
 	Connection &connection;
 	/**
-	 * @brief Holds a list of 8bit integers in pairs of two: The first integer is always a Command and the second integer a corresponding throttle value.
+	 * @brief Holds a list of Commands per RemoteController-Protocol v1.0.0: 8-bit instruction 32-bit float throttle.
 	 *
 	 */
-	std::vector<uint8_t> commandQueue;
-	std::function<void(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttles)> commandCallbackFunction;
+	uint8_t commandQueue[REMOTECONTROLLER_COMMAND_QUEUE_SIZE];
+	size_t commandQueueIndex = 0; // The currently free index in the command queue to write to (needs to be checked for out-of-bounds before writing)
+	
+	uint8_t incomingBuffer[REMOTECONTROLLER_INCOMING_BUFFER_SIZE];
+	uint8_t outgoingBuffer[REMOTECONTROLLER_OUTGOING_BUFFER_SIZE];
+	
+	uint8_t incomingCommandsBuffer[REMOTECONTROLLER_INCOMING_CALLBACK_ARRAY_LENGTH];
+	float incomingThrottlesBuffer[REMOTECONTROLLER_INCOMING_CALLBACK_ARRAY_LENGTH];
+
+#if defined(RC_ARCH_USE_FUNCTIONAL)
+	std::function<void(const uint8_t commands[], const float throttles[], size_t length)> commandCallbackFunction;
 	std::function<void(const void *buffer, size_t length)> payloadCallbackFunction;
+#else
+	void (*commandCallbackFunction)(const uint8_t commands[], const float throttles[], size_t length);
+	void (*payloadCallbackFunction)(const void *buffer, size_t length);
+
+#endif
+
 	Error error = NoError;
-
-	uint8_t *incomingBuffer = nullptr;
-	uint8_t *outgoingBuffer = nullptr;
-	std::vector<uint8_t> incomingCommandsBuffer;
-	std::vector<uint8_t> incomingThrottlesBuffer;
-
 	bool m_begin();
-	bool transmitCommands(const std::vector<uint8_t> &commands);
+	void addToCommandQueue(uint8_t command, float throttle);
+	bool transmitCommands(const uint8_t commands[], size_t length);
+	void encodeCommand(uint8_t command, float throttle, uint8_t *buffer);
 };
 
 #endif

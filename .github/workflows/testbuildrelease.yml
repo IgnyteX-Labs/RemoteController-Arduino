@@ -5,6 +5,11 @@ on:
     branches: [main]
   push:
     branches: [main, develop]
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
 
 jobs:
   test:
@@ -33,12 +38,14 @@ jobs:
         run: platformio test -e test_native
       - name: Build Examples
         run: |
-          pio ci --project-conf=platformio.ini --environment=production --lib= examples/CustomConnection/CustomConnection.ino
-          pio ci --project-conf=platformio.ini --environment=production --lib= examples/GettingStartedRF24/GettingStartedRF24.ino
+          pio ci --project-conf=platformio.ini --environment=prod_esp32 --lib= examples/CustomConnection/CustomConnection.ino
+          pio ci --project-conf=platformio.ini --environment=prod_esp32 --lib= examples/GettingStartedRF24/GettingStartedRF24.ino
+          pio ci --project-conf=platformio.ini --environment=prod_avr --lib= examples/CustomConnection/CustomConnection.ino
+          pio ci --project-conf=platformio.ini --environment=prod_avr --lib= examples/GettingStartedRF24/GettingStartedRF24.ino
       
   versioning:
     needs: test
-    name: Determine version and Release
+    name: Determine and update library.json version and create Release
     permissions: write-all
 
     runs-on: ubuntu-latest
@@ -118,6 +125,7 @@ jobs:
               declare -i nextminordigit=0
               declare -i nextpatchdigit=0
               declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit"
+              declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit"
               declare buildversionfilename=$(echo "${buildversion//./_}")
 
             elif [[ "${{ github.event.head_commit.message }}" == *"minor"* ]]; then
@@ -126,6 +134,7 @@ jobs:
               declare -i nextminordigit=${{ steps.versioninfo.outputs.lastminordigit }}+1
               declare -i nextpatchdigit=0
               declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit"
+              declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit"
               declare buildversionfilename=$(echo "${buildversion//./_}")
             else
               echo "Incrementing Patch versionDigit"
@@ -133,6 +142,7 @@ jobs:
               declare -i nextminordigit=${{ steps.versioninfo.outputs.lastminordigit }}
               declare -i nextpatchdigit=${{ steps.versioninfo.outputs.lastpatchdigit }}+1
               declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit"
+              declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit"
               declare buildversionfilename=$(echo "${buildversion//./_}")
             fi
           else
@@ -141,6 +151,7 @@ jobs:
             declare -i nextminordigit=${{ steps.versioninfo.outputs.lastminordigit }}
             declare -i nextpatchdigit=${{ steps.versioninfo.outputs.lastpatchdigit }}
             declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit-${{ steps.versioninfo.outputs.commithash }}"
+            declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit-${{ steps.versioninfo.outputs.commithash }}"
             declare buildversionfilename=$(echo "${buildversion//./_}")
           fi
           echo "Building Version : $buildversion"
@@ -159,11 +170,36 @@ jobs:
         id: showbuildinfo
         run: |
           echo "Build Version   : ${{ steps.selectversion.outputs.buildversion }}"
+          echo "Pure Version    : ${{ steps.selectversion.outputs.buildversionpure }}"
           echo "  Major         : ${{ steps.selectversion.outputs.nextmajordigit }}"
           echo "  Minor         : ${{ steps.selectversion.outputs.nextminordigit }}"
           echo "  Patch         : ${{ steps.selectversion.outputs.nextpatchdigit }}"
           echo "Build Filename  : ${{ steps.selectversion.outputs.buildversionfilename }}"
           echo "Build Timestamp : ${{ steps.versioninfo.outputs.buildtimestamp }}"
+
+      - name: Update library.json version
+        uses: jossef/action-set-json-field@v2.1
+        if: ${{ steps.versioninfo.outputs.branchname == 'main'}}
+        with:
+          file: library.json
+          field: version
+          value: ${{ steps.versioninfo.outputs.buildversionpure }}
+      
+      - name: Commit files
+        if: ${{ steps.versioninfo.outputs.branchname == 'main'}}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add library.json
+          git commit -m "docs: Set version number ${{ steps.selectversion.outputs.buildversion }}"
+          git tag ${{ steps.selectversion.outputs.buildversion }}
+
+      - name: Push changes
+        if: ${{ steps.versioninfo.outputs.branchname == 'main'}}
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tags: true
 
       - name: Release when on main branch
         id: createrelease

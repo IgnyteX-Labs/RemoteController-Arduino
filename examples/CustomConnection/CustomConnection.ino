@@ -70,6 +70,7 @@ public:
 
 	/**
 	 * @brief The maximum size, in byte, that can be send in one package i.e. with one Connection::write() call. HAS TO BE AN EVEN NUMBER!!
+	 * @warning If this is smaller than the size of one command (i.e. 2 bytes (identifer) + 5 bytes (command) = 7 bytes) you will encounter unexpected problems.
 	 *
 	 */
 	size_t getMaxPackageSize() {
@@ -92,20 +93,21 @@ enum Commands : uint8_t
 	ToggleLED // Add any commands you wish
 };
 
-void commandReceivedCallback(const std::vector<uint8_t> &commands, const std::vector<uint8_t> &throttle)
+void commandReceivedCallback(const uint8_t commands[], const float throttles[], size_t length)
 {
 	// Do something with the received commands
-	for (auto command : commands)
+	for (size_t i = 0; i < length; i++)
 	{
-		if (command == GoForward)
+		if(commands[i] == GoForward)
 		{
 			// Go Forward
-			Serial.println("GoForward");
-		}
-		else if (command == GoBackward)
+			Serial.print("GoForward with throttle: ");
+			Serial.println(throttles[i]);
+		}else if(commands[i] == GoBackward)
 		{
-			// Go backward
-			Serial.println("GoBackward");
+			// Go Forward
+			Serial.print("GoBackward with throttle: ");
+			Serial.println(throttles[i]);
 		}
 	}
 }
@@ -125,7 +127,7 @@ void setup()
 	if (!rc.begin(commandReceivedCallback, payloadReceivedCallback))
 	{
 		// Failed to begin
-		Serial.println(rc.getErrorDescription().c_str());
+		Serial.println(rc.getErrorDescription());
 	}
 }
 
@@ -135,7 +137,7 @@ void loop()
 	if (!rc.run())
 	{
 		// An error occured
-		Serial.println(rc.getErrorDescription().c_str());
+		Serial.println(rc.getErrorDescription());
 	}
 
 	// Send example commands every 2 sec (non blocking) (do not use delay(2000))

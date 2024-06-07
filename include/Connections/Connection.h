@@ -56,7 +56,8 @@ public:
 	virtual bool write(const void *buffer, size_t length) = 0;
 
 	/**
-	 * @brief The maximum size, in byte, that can be send in one package i.e. with one Connection::write() call. HAS TO BE AN EVEN NUMBER!!
+	 * @brief The maximum size, in byte, that can be send in one package i.e. with one Connection::write() call.
+	 * @warning If this is smaller than the size of one command (i.e. 2 bytes (identifer) + 5 bytes (command) = 7 bytes) you will encounter unexpected problems.
 	 * 
 	 */
 	virtual size_t getMaxPackageSize() = 0;

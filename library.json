@@ -1,0 +1,14 @@
+{
+	"name": "RemoteController",
+	"version": "",
+	"description": "Library for the Arduino Framework to implement any type of remote control to Arduino, ESP32, ESP8266. (Connection between two Arduino boards!)",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/IgnyteX-Labs/RemoteController-Arduino.git"
+	},
+	"authors": {
+		"name": "Veit Auckenthaler"
+	},
+	"license": "MIT",
+	"frameworks": "Arduino"
+}
