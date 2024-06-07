@@ -71,6 +71,7 @@ public:
 	bool begin(void (*cmdClb)(const uint8_t commands[], const float throttles[], size_t length), void (*pldClb)(const void *buffer, size_t length));
 #endif
 
+
 	/**
 	 * @brief Closes the RemoteController connection and frees all occupied memory
 	 *
@@ -79,7 +80,7 @@ public:
 
 	/**
 	 * @brief This function has to be called repeatedly in a loop! It handles the transmission of queued commands and receiving of commands/payloads.
-	 *
+   *
 	 * @return true RemoteController tasks where handled successfully
 	 * @return false An Error occured, get error using RemoteController::getErrorCode() or RemoteController::getErrorDescription()
 	 */
