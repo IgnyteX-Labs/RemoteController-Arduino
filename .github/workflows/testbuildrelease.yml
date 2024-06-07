@@ -61,6 +61,7 @@ jobs:
       nextminordigit: ${{ steps.selectversion.outputs.nextminordigit }}
       nextpatchdigit: ${{ steps.selectversion.outputs.nextpatchdigit }}
       buildversion: ${{ steps.selectversion.outputs.buildversion }}
+      buildversionpure: ${{ steps.selectversion.outputs.buildversionpure }}
       buildversionfilename: ${{ steps.selectversion.outputs.buildversionfilename }}
 
     steps:
@@ -164,6 +165,7 @@ jobs:
           echo "nextminordigit=$nextminordigit" >> $GITHUB_OUTPUT
           echo "nextpatchdigit=$nextpatchdigit" >> $GITHUB_OUTPUT
           echo "buildversion=$buildversion" >> $GITHUB_OUTPUT
+          echo "buildversionpure=$buildversionpure" >> $GITHUB_OUTPUT
           echo "buildversionfilename=$buildversionfilename" >> $GITHUB_OUTPUT
 
       - name: Show Build info
