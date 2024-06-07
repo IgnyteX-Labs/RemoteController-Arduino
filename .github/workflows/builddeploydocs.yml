@@ -9,6 +9,8 @@ on:
       - '.github/workflows/builddeploydocs.yml'
       - 'docs/*'
       - 'README.md'
+permissions:
+  contents: write
 
 jobs:
   deploy:
