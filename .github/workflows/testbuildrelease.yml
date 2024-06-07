@@ -185,7 +185,7 @@ jobs:
         with:
           file: library.json
           field: version
-          value: ${{ steps.versioninfo.outputs.buildversionpure }}
+          value: "${{ steps.selectversion.outputs.buildversionpure }}"
       
       - name: Commit files
         if: ${{ steps.versioninfo.outputs.branchname == 'main'}}
