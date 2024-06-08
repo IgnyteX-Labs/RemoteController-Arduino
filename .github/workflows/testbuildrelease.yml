@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, develop]
+    branches: [main]
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -118,41 +118,36 @@ jobs:
           echo "  Major               : ${{ steps.versioninfo.outputs.lastmajordigit }}"
           echo "  Minor               : ${{ steps.versioninfo.outputs.lastminordigit }}"
           echo "  Patch               : ${{ steps.versioninfo.outputs.lastpatchdigit }}"
-          if [ "${{ steps.versioninfo.outputs.branchname }}" == "main" ]; then
-            echo "Triggered from merge on main branch with commit title : ${{ github.event.head_commit.message }}"
-            if [[ "${{ github.event.head_commit.message }}" == *"major"* ]]; then
-              echo "Incrementing Major versionDigit"
-              declare -i nextmajordigit=${{ steps.versioninfo.outputs.lastmajordigit }}+1
-              declare -i nextminordigit=0
-              declare -i nextpatchdigit=0
-              declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit"
-              declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit"
-              declare buildversionfilename=$(echo "${buildversion//./_}")
-
-            elif [[ "${{ github.event.head_commit.message }}" == *"minor"* ]]; then
-              echo "Incrementing Minor versionDigit"
-              declare -i nextmajordigit=${{ steps.versioninfo.outputs.lastmajordigit }}
-              declare -i nextminordigit=${{ steps.versioninfo.outputs.lastminordigit }}+1
-              declare -i nextpatchdigit=0
-              declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit"
-              declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit"
-              declare buildversionfilename=$(echo "${buildversion//./_}")
-            else
-              echo "Incrementing Patch versionDigit"
-              declare -i nextmajordigit=${{ steps.versioninfo.outputs.lastmajordigit }}
-              declare -i nextminordigit=${{ steps.versioninfo.outputs.lastminordigit }}
-              declare -i nextpatchdigit=${{ steps.versioninfo.outputs.lastpatchdigit }}+1
-              declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit"
-              declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit"
-              declare buildversionfilename=$(echo "${buildversion//./_}")
-            fi
+          echo "Triggered from merge on ${{ steps.versioninfo.outputs.branchname }} branch with commit title : ${{ github.event.head_commit.message }}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            declare message="${{ github.event.pull_request.title }}"
           else
-            echo "Not on main branch -> development version"
+            declare message="${{ github.event.head_commit.message }}"
+          fi
+          if [[ $message == *"major"* ]]; then
+            echo "Incrementing Major versionDigit"
+            declare -i nextmajordigit=${{ steps.versioninfo.outputs.lastmajordigit }}+1
+            declare -i nextminordigit=0
+            declare -i nextpatchdigit=0
+            declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit"
+            declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit"
+            declare buildversionfilename=$(echo "${buildversion//./_}")
+
+          elif [[ $message == *"minor"* ]]; then
+            echo "Incrementing Minor versionDigit"
+            declare -i nextmajordigit=${{ steps.versioninfo.outputs.lastmajordigit }}
+            declare -i nextminordigit=${{ steps.versioninfo.outputs.lastminordigit }}+1
+            declare -i nextpatchdigit=0
+            declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit"
+            declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit"
+            declare buildversionfilename=$(echo "${buildversion//./_}")
+          else
+            echo "Incrementing Patch versionDigit"
             declare -i nextmajordigit=${{ steps.versioninfo.outputs.lastmajordigit }}
             declare -i nextminordigit=${{ steps.versioninfo.outputs.lastminordigit }}
-            declare -i nextpatchdigit=${{ steps.versioninfo.outputs.lastpatchdigit }}
-            declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit-${{ steps.versioninfo.outputs.commithash }}"
-            declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit-${{ steps.versioninfo.outputs.commithash }}"
+            declare -i nextpatchdigit=${{ steps.versioninfo.outputs.lastpatchdigit }}+1
+            declare buildversion="v$nextmajordigit.$nextminordigit.$nextpatchdigit"
+            declare buildversionpure="$nextmajordigit.$nextminordigit.$nextpatchdigit"
             declare buildversionfilename=$(echo "${buildversion//./_}")
           fi
           echo "Building Version : $buildversion"
@@ -181,27 +176,26 @@ jobs:
 
       - name: Update library.json version
         uses: jossef/action-set-json-field@v2.1
-        if: ${{ steps.versioninfo.outputs.branchname == 'main'}}
+        if: ${{ github.event_name == 'pull_request'}}
         with:
           file: library.json
           field: version
           value: "${{ steps.selectversion.outputs.buildversionpure }}"
       
       - name: Commit files
-        if: ${{ steps.versioninfo.outputs.branchname == 'main'}}
+        if: ${{ github.event_name == 'pull_request'}}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
           git add library.json
           git commit -m "docs: Set version number ${{ steps.selectversion.outputs.buildversion }}"
-          git tag ${{ steps.selectversion.outputs.buildversion }}
 
       - name: Push changes
-        if: ${{ steps.versioninfo.outputs.branchname == 'main'}}
+        if: ${{ github.event_name == 'pull_request'}}
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          tags: true
+          branch: ${{ github.head_ref }}
 
       - name: Release when on main branch
         id: createrelease
