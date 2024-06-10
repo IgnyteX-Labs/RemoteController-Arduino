@@ -1,5 +1,5 @@
-#ifndef RF24CONNECTION_H_
-#define RF24CONNECTION_H_
+#ifndef REMOTECONTROLLER_RF24CONNECTION_H_
+#define REMOTECONTROLLER_RF24CONNECTION_H_
 
 #include "Connection.h"
 #include <RF24.h>
