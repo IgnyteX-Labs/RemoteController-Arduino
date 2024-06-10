@@ -1,6 +1,5 @@
 #include <Arduino.h> // Remove include when using Arduino IDE
 
-#include <SPI.h>
 #include "RemoteController.h"
 #include "Connections/Connection.h"
 
